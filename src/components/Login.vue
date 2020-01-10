@@ -68,7 +68,6 @@ export default {
       // 登录成功后的token，保存到sessionStorage中
       // 项目除登录外的接口需要登录后才能用
       // token只应在网站打开期间有效，所以保存到sessionStorage中
-      console.log(res)
       window.sessionStorage.setItem('token', res.data.token)
       // 通过编程式导航跳转后台主页 /home
       this.$router.push('/home')
