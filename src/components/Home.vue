@@ -11,22 +11,33 @@
     <!-- 页面主图区域 -->
     <el-container>
       <!-- 侧边栏 -->
-      <el-aside width="200px">
+      <el-aside :width="isCollapse ? '64px' : '200px'">
+        <!-- 菜单折叠展开按钮 -->
+        <div class="toggle-button" @click="toggleCollapse">|||</div>
         <!-- 侧边栏菜单区域 -->
         <el-menu
           background-color="#333744"
           text-color="#fff"
           active-text-color="#409bff"
           :unique-opened="true"
+          :collapse="isCollapse"
+          :collapse-transition="false"
+          :router="true"
+          :default-active="activePath"
         >
-          <!-- indexe接收字符串控制一级菜单动作 -->
+          <!-- index接收字符串控制一级菜单动作 -->
           <el-submenu :index="item.id+''" v-for="item in menuList" :key="item.id">
             <template slot="title">
               <i :class="iconsObj[item.id]"></i>
               <span>{{ item.authName }}</span>
             </template>
             <!-- 二级菜单 -->
-            <el-menu-item :index="subItem.id+''" v-for="subItem in item.children" :key="subItem.id">
+            <el-menu-item
+              :index="'/' + subItem.path"
+              v-for="subItem in item.children"
+              :key="subItem.id"
+              @click="saveNavState('/' + subItem.path)"
+            >
               <template slot="title">
                 <i class="el-icon-menu"></i>
                 <span>{{ subItem.authName }}</span>
@@ -36,7 +47,9 @@
         </el-menu>
       </el-aside>
       <!-- 右侧主体区域 -->
-      <el-main>Main</el-main>
+      <el-main>
+        <router-view></router-view>
+      </el-main>
     </el-container>
   </el-container>
 </template>
@@ -54,11 +67,16 @@ export default {
         '101': 'iconfont el-icon-shopping-bag-2',
         '102': 'iconfont el-icon-tickets',
         '145': 'iconfont el-icon-data-line'
-      }
+      },
+      // 菜单栏是否折叠
+      isCollapse: false,
+      // 保存激活路由地址
+      activePath: ''
     }
   },
   created() {
     this.getMenuList()
+    this.activePath = window.sessionStorage.getItem('activePath')
   },
   methods: {
     logout() {
@@ -67,12 +85,21 @@ export default {
     },
     async getMenuList() {
       const { data: res } = await this.$http.get('menus')
-      console.log(res)
+      // console.log(res)
       if (res.meta.status !== 200) {
         return this.$message.error(res.meta.msg)
       } else {
         this.menuList = res.data
       }
+    },
+    toggleCollapse() {
+      this.isCollapse = !this.isCollapse
+    },
+    // 保存菜单栏激活状态以高亮显示
+    saveNavState(activePath) {
+      // 激活路由的高亮可以直接使用$route.path来确定所点击路径
+      window.sessionStorage.setItem('activePath', activePath)
+      this.activePath = activePath
     }
   }
 }
@@ -103,6 +130,15 @@ export default {
   background-color: #333744;
   .el-menu {
     border-right: 0;
+  }
+  .toggle-button {
+    background-color: #4a5064;
+    color: #fff;
+    font-size: 10px;
+    line-height: 24px;
+    text-align: center;
+    letter-spacing: 0.2em;
+    cursor: pointer;
   }
 }
 .el-main {

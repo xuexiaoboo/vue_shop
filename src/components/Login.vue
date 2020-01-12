@@ -58,6 +58,7 @@ export default {
     async login() {
       // 对请求数据解构
       const { data: res } = await this.$http.post('login', this.loginForm)
+      // console.log(res)
       if (res.meta.status !== 200) {
         // console.log('登录失败')
         this.$message.error('用户名或密码错误！')
