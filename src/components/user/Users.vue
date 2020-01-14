@@ -36,10 +36,20 @@
         <el-table-column label="操作" width="180">
           <template v-slot="scope">
             <el-tooltip effect="dark" content="修改" placement="top" :enterable="false">
-              <el-button type="primary" icon="el-icon-edit" size="mini" @click="showEditDiaLog(scope.row.id)"></el-button>
+              <el-button
+                type="primary"
+                icon="el-icon-edit"
+                size="mini"
+                @click="showEditDiaLog(scope.row.id)"
+              ></el-button>
             </el-tooltip>
             <el-tooltip effect="dark" content="删除" placement="top" :enterable="false">
-              <el-button type="danger" icon="el-icon-delete" size="mini"></el-button>
+              <el-button
+                type="danger"
+                icon="el-icon-delete"
+                size="mini"
+                @click="removeUserById(scope.row.id)"
+              ></el-button>
             </el-tooltip>
             <el-tooltip effect="dark" content="设置" placement="top" :enterable="false">
               <el-button type="warning" icon="el-icon-setting" size="mini"></el-button>
@@ -85,13 +95,13 @@
     </el-dialog>
 
     <!-- 修改用户对话框 -->
-    <el-dialog title="修改用户信息" :visible.sync="editDialogVisible" width="50%">
-      <el-form
-        :model="editForm"
-        :rules="editFormRules"
-        ref="editFormRef"
-        label-width="70px"
-      >
+    <el-dialog
+      title="修改用户信息"
+      :visible.sync="editDialogVisible"
+      width="50%"
+      @close="editDialogClosed"
+    >
+      <el-form :model="editForm" :rules="editFormRules" ref="editFormRef" label-width="70px">
         <el-form-item label="用户名">
           <el-input :disabled="true" v-model="editForm.username"></el-input>
         </el-form-item>
@@ -104,7 +114,7 @@
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="editDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="editDialogVisible = false">确 定</el-button>
+        <el-button type="primary" @click="editUserInfo">确 定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -273,7 +283,7 @@ export default {
     addUser() {
       // 点击确定后对整个表单进行校验
       this.$refs.addFormRef.validate(async valid => {
-        // 校验结果不通过
+        // 校验结果通过
         if (valid) {
           // 校验通过，发起添加请求
           const { data: res } = await this.$http.post('users', this.addForm)
@@ -297,6 +307,51 @@ export default {
       }
       this.editForm = res.data
       this.editDialogVisible = true
+    },
+    // 重置用户信息修改对话框
+    editDialogClosed() {
+      this.$refs.editFormRef.resetFields()
+    },
+    editUserInfo() {
+      this.$refs.editFormRef.validate(async valid => {
+        // console.log(valid)
+        // 验证通过，发起修改请求
+        if (valid) {
+          const { data: res } = await this.$http.put(
+            'users/' + this.editForm.id,
+            {
+              email: this.editForm.email,
+              mobile: this.editForm.mobile
+            }
+          )
+          if (res.meta.status !== 200) {
+            this.$message.error('用户信息修改失败！')
+          }
+          this.editDialogVisible = false
+          this.getUserList()
+          this.$message.success('用户信息修改成功！')
+        }
+      })
+    },
+    async removeUserById(id) {
+      const confirmResult = await this.$confirm('此操作将永久删除该用户信息, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+        center: true
+      }).catch(error => error)
+      // console.log(confirmResult)
+      // 如果用户确认删除，返回字符串 confirm
+      // 如果用户取消了删除，返回字符串 cancel
+      if (confirmResult !== 'confirm') {
+        return this.$message.info('已经取消删除！')
+      }
+      const { data: res } = await this.$http.delete('users/' + id)
+      if (res.meta.status !== 200) {
+        return this.$message.error('用户删除失败！')
+      }
+      this.$message.success('用户删除成功！')
+      this.getUserList()
     }
   }
 }
